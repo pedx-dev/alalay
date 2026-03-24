@@ -174,16 +174,13 @@ export const makeId = () =>
 
 export const createSeedDatabase = (): Database => {
   const adminId = "usr-admin-001";
+  const teacherId = "usr-teacher-001";
   const councilorId = "usr-councilor-001";
-  const teacherIds = defaultSubjectNames.map((_, index) =>
-    `usr-teacher-${(index + 1).toString().padStart(3, "0")}`,
-  );
-  const leadTeacherId = teacherIds[0] ?? null;
 
   const sections = sectionNames.map((name, index) => ({
     id: `sec-${(index + 1).toString().padStart(2, "0")}`,
     name,
-    teacherId: index < 4 ? leadTeacherId : null,
+    teacherId: index < 4 ? teacherId : null,
     studentIds: [] as string[],
   }));
 
@@ -200,7 +197,7 @@ export const createSeedDatabase = (): Database => {
         program: "BSIT",
         yearLevel: "3RD YR",
       },
-      assignment: { teacherId: leadTeacherId, sectionId: sections[4]?.id ?? null },
+      assignment: { teacherId, sectionId: sections[4]?.id ?? null },
       grades: {
         coreMath: "91",
         communication: "89",
@@ -229,7 +226,7 @@ export const createSeedDatabase = (): Database => {
         program: "BSIT",
         yearLevel: "3RD YR",
       },
-      assignment: { teacherId: leadTeacherId, sectionId: sections[4]?.id ?? null },
+      assignment: { teacherId, sectionId: sections[4]?.id ?? null },
       grades: {
         coreMath: "",
         communication: "",
@@ -250,7 +247,7 @@ export const createSeedDatabase = (): Database => {
         program: "BSEDUC",
         yearLevel: "2ND YR",
       },
-      assignment: { teacherId: leadTeacherId, sectionId: sections[9]?.id ?? null },
+      assignment: { teacherId, sectionId: sections[9]?.id ?? null },
       grades: {
         coreMath: "87",
         communication: "95",
@@ -288,25 +285,16 @@ export const createSeedDatabase = (): Database => {
         shortcut: "@admin",
         status: "ACTIVE",
       },
-      ...defaultSubjectNames.map((subject, index) => {
-        const id = teacherIds[index] ?? `usr-teacher-${(index + 1).toString().padStart(3, "0")}`;
-        const slug = subject
-          .toLowerCase()
-          .replace(/[^a-z0-9\s]/g, "")
-          .trim()
-          .replace(/\s+/g, ".");
-
-        return {
-          id,
-          fullName: `${subject} Teacher`,
-          username: `${slug}@edu`,
-          password: "edu123",
-          role: "TEACHER" as const,
-          shortcut: "@edu" as const,
-          status: "ACTIVE" as const,
-          assignedSubjects: [subject],
-        };
-      }),
+      {
+        id: teacherId,
+        fullName: "Eduardo Reyes",
+        username: "edu@edu",
+        password: "edu123",
+        role: "TEACHER",
+        shortcut: "@edu",
+        status: "ACTIVE",
+        assignedSubjects: [...defaultSubjectNames],
+      },
       {
         id: councilorId,
         fullName: "Connie Villanueva",

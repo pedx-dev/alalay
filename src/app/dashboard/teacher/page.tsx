@@ -39,10 +39,14 @@ export default function TeacherDashboard() {
   }, []);
 
   const activeTeacher = useMemo(
-    () =>
-      db?.users.find(
-        (u) => u.role === "TEACHER" && u.status === "ACTIVE" && (!sessionUserId || u.id === sessionUserId),
-      ) ?? null,
+    () => {
+      if (!db) return null;
+      const sessionTeacher = db.users.find(
+        (u) => u.role === "TEACHER" && u.status === "ACTIVE" && sessionUserId && u.id === sessionUserId,
+      );
+      if (sessionTeacher) return sessionTeacher;
+      return db.users.find((u) => u.role === "TEACHER" && u.status === "ACTIVE") ?? null;
+    },
     [db, sessionUserId],
   );
 

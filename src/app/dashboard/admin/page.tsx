@@ -5,7 +5,6 @@ import {
   appendLog,
   computeOverallGwa,
   computeTermGwa,
-  defaultSubjectNames,
   makeId,
   normalizeSubjectGrades,
   type Status,
@@ -17,7 +16,6 @@ export default function AdminDashboard() {
 
   const [newTeacherName, setNewTeacherName] = useState("");
   const [newTeacherPassword, setNewTeacherPassword] = useState("changeme123");
-  const [newTeacherSubject, setNewTeacherSubject] = useState<string>(defaultSubjectNames[0]);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [teacherSearch, setTeacherSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
@@ -212,7 +210,7 @@ export default function AdminDashboard() {
         <p className="mt-1 text-sm text-slate-600">
           Only teacher accounts can be added here. Admin and councilor stay fixed.
         </p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-4">
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
           <input
             value={newTeacherName}
             onChange={(event) => setNewTeacherName(event.target.value)}
@@ -225,19 +223,13 @@ export default function AdminDashboard() {
             placeholder="Password"
             className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm"
           />
-          <select
-            value={newTeacherSubject}
-            onChange={(event) => setNewTeacherSubject(event.target.value)}
-            className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm"
-          >
-            {defaultSubjectNames.map((subject) => (
-              <option key={subject} value={subject}>
-                {subject}
-              </option>
-            ))}
-          </select>
           <button
             onClick={() => {
+              if (teachers.length >= 1) {
+                setNotice("Only one teacher account is allowed.");
+                return;
+              }
+
               const name = newTeacherName.trim();
               const password = newTeacherPassword.trim();
 
@@ -262,7 +254,6 @@ export default function AdminDashboard() {
                       role: "TEACHER" as const,
                       shortcut: "@edu" as const,
                       status: "ACTIVE" as const,
-                      assignedSubjects: [newTeacherSubject],
                     },
                     ...current.users,
                   ],
@@ -277,7 +268,6 @@ export default function AdminDashboard() {
 
               setNewTeacherName("");
               setNewTeacherPassword("changeme123");
-              setNewTeacherSubject(defaultSubjectNames[0]);
               setNotice("Teacher account created.");
             }}
             className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-700"
@@ -484,10 +474,6 @@ export default function AdminDashboard() {
                   <p className="text-sm font-semibold text-slate-700">{teacher.username}</p>
                   <p className="mt-2 text-xs font-black uppercase tracking-wide text-indigo-700">Password</p>
                   <p className="text-sm font-semibold text-slate-700">{teacher.password}</p>
-                  <p className="mt-2 text-xs font-black uppercase tracking-wide text-indigo-700">Assigned Subjects</p>
-                  <p className="text-sm font-semibold text-slate-700">
-                    {teacher.assignedSubjects?.length ? teacher.assignedSubjects.join(", ") : "Not assigned"}
-                  </p>
                   <p
                     className={`mt-3 inline-flex rounded-full px-2 py-1 text-xs font-black ${
                       teacher.status === "ACTIVE"

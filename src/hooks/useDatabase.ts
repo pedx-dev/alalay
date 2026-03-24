@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DB_KEY, createSeedDatabase, defaultSubjectNames, makeId, type Database } from "~/lib/db";
+import { DB_KEY, createSeedDatabase, defaultSubjectNames, type Database } from "~/lib/db";
 
 const roleSuffix: Record<Database["users"][number]["role"], string> = {
   ADMIN: "@admin",
@@ -32,59 +32,53 @@ const normalizeUsers = (db: Database): Database => {
     };
   });
 
-  const teachers = normalized.filter((user) => user.role === "TEACHER");
-  const coveredSubjects = new Set(
-    teachers.flatMap((teacher) => teacher.assignedSubjects ?? []),
-  );
-
-  const usedUsernames = new Set(normalized.map((user) => user.username.toLowerCase()));
-  const generatedTeachers: Database["users"] = [];
-
-  for (const subject of defaultSubjectNames) {
-    if (coveredSubjects.has(subject)) continue;
-
-    const base = subject
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, "")
-      .trim()
-      .replace(/\s+/g, ".");
-
-    let username = `${base || "teacher"}@edu`;
-    let counter = 2;
-    while (usedUsernames.has(username)) {
-      username = `${base || "teacher"}${counter}@edu`;
-      counter += 1;
-    }
-    usedUsernames.add(username);
-
-    generatedTeachers.push({
-      id: `usr-${makeId()}`,
-      fullName: `${subject} Teacher`,
-      username,
-      password: "edu123",
-      role: "TEACHER",
-      shortcut: "@edu",
-      status: "ACTIVE",
-      assignedSubjects: [subject],
-    });
-  }
-
-  const usersWithSubjectTeachers = [...normalized, ...generatedTeachers];
-
   const seed = createSeedDatabase();
   const admin =
-    usersWithSubjectTeachers.find((user) => user.role === "ADMIN") ??
+    normalized.find((user) => user.role === "ADMIN") ??
     seed.users.find((user) => user.role === "ADMIN");
   const councilor =
-    usersWithSubjectTeachers.find((user) => user.role === "COUNCILOR") ??
+    normalized.find((user) => user.role === "COUNCILOR") ??
     seed.users.find((user) => user.role === "COUNCILOR");
-  const normalizedTeachers = usersWithSubjectTeachers.filter((user) => user.role === "TEACHER");
+  const existingTeachers = normalized.filter((user) => user.role === "TEACHER");
+  const fallbackTeacher = seed.users.find((user) => user.role === "TEACHER");
+  const primaryTeacher =
+    (existingTeachers[0]
+      ? {
+          ...existingTeachers[0],
+          username: "edu@edu",
+          password: "edu123",
+          assignedSubjects: [...defaultSubjectNames],
+        }
+      : fallbackTeacher)
+      ?? null;
+
+  const teacherId = primaryTeacher?.id ?? null;
+
+  const nextSections = db.sections.map((section) => {
+    if (!teacherId) return section;
+    if (!section.teacherId) return section;
+    return { ...section, teacherId };
+  });
+
+  const nextStudents = db.students.map((student) => {
+    if (!teacherId) return student;
+    if (!student.assignment.teacherId) return student;
+    return {
+      ...student,
+      assignment: {
+        ...student.assignment,
+        teacherId,
+      },
+    };
+  });
 
   return {
     ...db,
-    users: [admin, councilor, ...normalizedTeachers].filter(
+    users: [admin, councilor, primaryTeacher].filter(
       (user): user is Database["users"][number] => Boolean(user),
     ),
+    sections: nextSections,
+    students: nextStudents,
   };
 };
 
